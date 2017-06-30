@@ -91,6 +91,92 @@
     </div>
 </template>
 <script type="text/javascript">
+    var screen = {
+        template:'#screen',
+        props:['info','playstate'],
+        data:function(){
+            return{
+                height:[],
+                scrollTopArr:[0],
+                scrollTop:0,
+                degree:0,
+                rotateAnimation:'',
+                rollingState:0,
+                rollingAnimation:[],
+                time:[]
+
+            }
+        },
+        methods:{
+            rolling:function(){
+                //歌词滚动&高亮显示歌词
+                var sections = document.getElementById('lyrics').getElementsByTagName('div');
+                var self = this;
+                if(this.rollingState == 0){
+                    self.rollingAnimation.push(setTimeout(function(){
+                        sections[0].className += " " + "highLight";
+                    },self.time[0]*1000));
+                    this.rollingState++;
+                }
+                for(var m=this.rollingState,len = self.height.length;m<len;m++){
+                    (function(m){
+                        self.rollingAnimation.push(setTimeout(function(){
+                            self.scrollTop = self.scrollTopArr[m];
+                            sections[m].className += " " + "highLight";
+                            sections[m-1].className = sections[m-1].className.replace(/highLight/,'');
+                        },self.time[m]*1000));
+                    })(m);
+                }
+            },
+            rotate:function(){
+                var ele = document.getElementById('album-art');
+                var self = this;
+                self.rotateAnimation = setInterval(function(){
+                    self.degree = self.degree + 1;
+                    ele.style.transform ='rotate('+self.degree+'deg)';
+                },50);
+            },
+            stop:function(){
+                //更新时间
+                for(var i = 0,len=this.time.length;i<len;i++){
+                    this.time[i]=this.info.time[i]-this.info.currentTime;
+                }
+                this.rollingState = this.scrollTopArr.indexOf(this.scrollTop);
+                if((this.rollingState == 0 && this.info.currentTime >= this.info.time[0]) || this.rollingState > 0){
+                    this.rollingState++;
+                }
+                clearInterval(this.rotateAnimation);
+                for(var j=0,len=this.rollingAnimation.length;j<len;j++){
+                    clearTimeout(this.rollingAnimation[j]);
+                }
+                this.rollingAnimation = [];
+            }
+        },
+        mounted:function(){
+            var self = this;
+            setTimeout(function(){
+                //渲染完成后，获取div高度值
+                var selfScrollTop = 0;
+                var sections = document.getElementById('lyrics').getElementsByTagName('div');
+                for(var k = 0,len = sections.length;k < len;k++){
+                    self.height.push(sections[k].offsetHeight);
+                    selfScrollTop += sections[k].offsetHeight;
+                    self.scrollTopArr.push(selfScrollTop);
+                    self.time.push(self.info.time[k]);
+                }
+            },300);
+        },
+        watch:{
+            playstate:function(newPlaystate){
+                if(newPlaystate === true){
+                    this.rotate();
+                    this.rolling();
+                }else{
+                    this.stop();
+                }
+            }
+        }
+    }
     Vue.component('my-player',{
         template:'#player',
         data:function(){
@@ -140,95 +226,12 @@
                 this.info.currentTime = audio.currentTime;
             }
         },
-        components:{
-            'screen':{
-                template:'#screen',
-                props:['info','playstate'],
-                data:function(){
-                    return{
-                        height:[],
-                        scrollTopArr:[0],
-                        scrollTop:0,
-                        degree:0,
-                        rotateAnimation:'',
-                        rollingState:0,
-                        rollingAnimation:[],
-                        time:[]
-
-                    }
-                },
-                methods:{
-                    rolling:function(){
-                        //歌词滚动&高亮显示歌词
-                        var sections = document.getElementById('lyrics').getElementsByTagName('div');
-                        var self = this;
-                        if(this.rollingState == 0){
-                            self.rollingAnimation.push(setTimeout(function(){
-                                sections[0].className += " " + "highLight";
-                            },self.time[0]*1000));
-                            this.rollingState++;
-                        }
-                        for(var m=this.rollingState,len = self.height.length;m<len;m++){
-                            (function(m){
-                                self.rollingAnimation.push(setTimeout(function(){
-                                    self.scrollTop = self.scrollTopArr[m];
-                                    sections[m].className += " " + "highLight";
-                                    sections[m-1].className = sections[m-1].className.replace(/highLight/,'');
-                                },self.time[m]*1000));
-                            })(m);
-                        }
-                    },
-                    rotate:function(){
-                        var ele = document.getElementById('album-art');
-                        var self = this;
-                        self.rotateAnimation = setInterval(function(){
-                            self.degree = self.degree + 1;
-                            ele.style.transform ='rotate('+self.degree+'deg)';
-                        },50);
-                    },
-                    stop:function(){
-                        //更新时间
-                        for(var i = 0,len=this.time.length;i<len;i++){
-                            this.time[i]=this.info.time[i]-this.info.currentTime;
-                        }
-                        this.rollingState = this.scrollTopArr.indexOf(this.scrollTop);
-                        if((this.rollingState == 0 && this.info.currentTime >= this.info.time[0]) || this.rollingState > 0){
-                            this.rollingState++;
-                        }
-                        clearInterval(this.rotateAnimation);
-                        for(var j=0,len=this.rollingAnimation.length;j<len;j++){
-                            clearTimeout(this.rollingAnimation[j]);
-                        }
-                        this.rollingAnimation = [];
-                    }
-                },
-                mounted:function(){
-                    var self = this;
-                    setTimeout(function(){
-                        //渲染完成后，获取div高度值
-                        var selfScrollTop = 0;
-                        var sections = document.getElementById('lyrics').getElementsByTagName('div');
-                        for(var k = 0,len = sections.length;k < len;k++){
-                            self.height.push(sections[k].offsetHeight);
-                            selfScrollTop += sections[k].offsetHeight;
-                            self.scrollTopArr.push(selfScrollTop);
-                            self.time.push(self.info.time[k]);
-                        }
-                    },300);
-                },
-                watch:{
-                    playstate:function(newPlaystate){
-                        if(newPlaystate === true){
-                            this.rotate();
-                            this.rolling();
-                        }else{
-                            this.stop();
-                        }
-                    }
-                }
-            }
+        components: {
+            'screen':screen
         }
     })
+
+
 
     var root = new Vue({
         el:'#root'
