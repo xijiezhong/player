@@ -1,7 +1,7 @@
 # 音乐播放器
 ## 界面展示
 ![](https://github.com/xijiezhong/player/blob/master/img/example.png)
-## 使用vue构建的一个简单音乐播放器
+## 使用vue构建的一个简单仿网易云音乐播放器
 整个文件很简单，一共两个组件：player和screen.<br>
 screen就是界面中间显示歌曲专辑封面、歌曲相关信息以及歌词的界面.<br>
 未来会考虑做成单页面应用.<br>
